@@ -1,3 +1,5 @@
+let currentLeadId = null;
+
 async function fetchLeads() {
     try {
         const response = await fetch('/api/admin/leads');
@@ -39,6 +41,7 @@ async function fetchLeads() {
 }
 
 async function loadLeadDetail(lead) {
+    currentLeadId = lead.id;
     document.getElementById('empty-state').style.display = 'none';
     document.getElementById('detail-panel').style.display = 'flex';
     
@@ -72,6 +75,43 @@ async function loadLeadDetail(lead) {
         chatWindow.scrollTop = chatWindow.scrollHeight;
     } catch (error) {
         console.error('Error fetching conversations:', error);
+    }
+    
+    // Reset takeover button state
+    const takeoverBtn = document.getElementById('takeover-btn');
+    if (lead.human_needed) {
+        takeoverBtn.innerText = "Taken Over (AI Paused)";
+        takeoverBtn.style.backgroundColor = "#666";
+        takeoverBtn.disabled = true;
+    } else {
+        takeoverBtn.innerText = "📞 Take Over (Mark Human)";
+        takeoverBtn.style.backgroundColor = "var(--primary)";
+        takeoverBtn.disabled = false;
+    }
+}
+
+async function markHuman() {
+    if (!currentLeadId) return;
+    
+    try {
+        const btn = document.getElementById('takeover-btn');
+        btn.innerText = "Taking over...";
+        btn.disabled = true;
+
+        const response = await fetch(`/api/admin/leads/${currentLeadId}/takeover`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            btn.innerText = "Taken Over (AI Paused)";
+            btn.style.backgroundColor = "#666";
+            fetchLeads(); // Refresh list
+        } else {
+            btn.innerText = "Failed. Try again.";
+            btn.disabled = false;
+        }
+    } catch (err) {
+        console.error(err);
     }
 }
 

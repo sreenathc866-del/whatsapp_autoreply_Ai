@@ -194,6 +194,21 @@ app.get('/api/admin/leads/:id/conversations', async (req, res) => {
   }
 });
 
+app.post('/api/admin/leads/:id/takeover', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('leads')
+      .update({ human_needed: true, assigned_agent: 'Human' })
+      .eq('id', id);
+      
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============================================
 // WebSocket Routing
 // ============================================
