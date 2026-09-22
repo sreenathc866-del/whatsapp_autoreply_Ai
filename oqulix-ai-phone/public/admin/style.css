@@ -130,6 +130,7 @@ body {
     display: flex;
     flex-direction: column;
     background: #f9fafb;
+    overflow-y: auto;
 }
 
 .empty-state {
@@ -202,6 +203,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 500px;
 }
 
 .conversation-section h3 {
