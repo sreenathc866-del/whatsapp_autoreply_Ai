@@ -172,9 +172,6 @@ async function processIncomingWhatsApp(phoneNumber, customerName, incomingMessag
       }]).catch(() => {});
     }
     return; // Stop here, no need to run RAG for simple greeting
-  } else {
-    // Send a quick placeholder
-    await sendWhatsAppMessage(phoneNumber, "I am reading your message, wait a second...");
   }
 
   // 2. RAG Search (searches vector database or falls back to data/oqulix/knowledge.md)
