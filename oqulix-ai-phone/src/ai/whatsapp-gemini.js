@@ -17,6 +17,8 @@ async function generateWhatsAppResponse(incomingMessage, context, conversationHi
 Your job is to qualify leads coming from Facebook/Instagram ads while providing excellent customer service.
 Respond naturally, concisely, and NEVER pretend to be a human. Do not ask unnecessary questions or repeat questions already answered.
 
+CRITICAL: DO NOT repeat greetings (e.g., "Hello, I am the AI assistant") in every message. Only introduce yourself or say "Hello" if it is the very first message. Otherwise, continue the conversation naturally.
+
 OQULIX KNOWLEDGE CONTEXT:
 ${context ? context : "No relevant information found in the knowledge base."}
 
@@ -35,9 +37,16 @@ URGENCY GUIDELINES:
 - LOW: Exploring, no rush.
 `;
 
-    // Construct history messages
+    // Construct history messages ensuring it alternates correctly and starts with user
     const contents = [];
-    for (const msg of conversationHistory) {
+    
+    // Filter out any starting 'model' messages which Gemini API rejects
+    let historyToUse = [...conversationHistory];
+    while (historyToUse.length > 0 && historyToUse[0].role !== 'user') {
+      historyToUse.shift();
+    }
+
+    for (const msg of historyToUse) {
       contents.push({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
     }
     contents.push({ role: 'user', parts: [{ text: incomingMessage }] });

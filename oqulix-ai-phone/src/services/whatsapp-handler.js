@@ -124,11 +124,14 @@ async function processIncomingWhatsApp(phoneNumber, customerName, incomingMessag
 
     // Save incoming message
     if (lead) {
-      await supabase.from('conversations').insert([{
+      const { error: insertErr } = await supabase.from('conversations').insert([{
         lead_id: lead.id,
         sender: 'customer',
         message: incomingMessage
-      }]).catch(() => {});
+      }]);
+      if (insertErr) {
+        console.error('[WhatsApp] Failed to save customer message:', insertErr);
+      }
 
       // Fetch history
       const { data: history } = await supabase
@@ -146,7 +149,8 @@ async function processIncomingWhatsApp(phoneNumber, customerName, incomingMessag
       }
     }
   } catch (dbErr) {
-    console.warn('[WhatsApp] Supabase DB offline or unavailable. Proceeding with AI response using local knowledge base.');
+    console.error('[WhatsApp] Supabase DB Error:', dbErr);
+    console.warn('[WhatsApp] Proceeding with AI response using local knowledge base.');
   }
 
   if (messageId) {

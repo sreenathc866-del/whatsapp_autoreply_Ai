@@ -115,5 +115,12 @@ async function markHuman() {
     }
 }
 
+function goBack() {
+    document.getElementById('detail-panel').style.display = 'none';
+    if (window.innerWidth > 768) {
+        document.getElementById('empty-state').style.display = 'flex';
+    }
+}
+
 // Initial load
 fetchLeads();

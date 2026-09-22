@@ -264,3 +264,62 @@ body {
 .primary-btn:hover {
     background: #128C7E;
 }
+
+/* Responsive / Mobile Styles */
+.back-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        position: relative; /* For absolutely positioning the detail panel over the leads panel */
+    }
+    
+    .leads-panel {
+        width: 100%;
+        border-right: none;
+    }
+
+    .detail-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f9fafb;
+        z-index: 10;
+        /* Relies on JS setting display: flex / none */
+    }
+
+    .empty-state {
+        display: none !important;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .back-btn {
+        display: inline-block;
+    }
+
+    .detail-header {
+        padding: 1rem;
+    }
+    
+    .conversation-section {
+        margin: 0 1rem 1rem;
+        min-height: 400px;
+    }
+    
+    .requirements {
+        margin: 0 1rem 1rem;
+    }
+}

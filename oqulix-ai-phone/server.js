@@ -199,7 +199,7 @@ app.post('/api/admin/leads/:id/takeover', async (req, res) => {
     const { id } = req.params;
     const { error } = await supabase
       .from('leads')
-      .update({ human_needed: true, assigned_agent: 'Human' })
+      .update({ human_needed: true })
       .eq('id', id);
       
     if (error) throw error;
