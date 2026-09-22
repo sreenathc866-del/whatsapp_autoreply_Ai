@@ -1,0 +1,264 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #f3f4f6;
+    color: #1f2937;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    background-color: #111827;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.logo span {
+    color: #3b82f6;
+}
+
+.stat-badge {
+    background: #374151;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-left: 1rem;
+}
+
+.hot-badge {
+    background: #ef4444;
+    color: white;
+}
+
+.dashboard {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Left Panel */
+.leads-panel {
+    width: 350px;
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.refresh-btn {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.leads-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.lead-card {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.lead-card:hover {
+    background: #f9fafb;
+}
+
+.lead-card.active {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+}
+
+.lead-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.lead-name {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+}
+.status-badge.HOT { background: #fee2e2; color: #b91c1c; }
+.status-badge.WARM { background: #fef3c7; color: #b45309; }
+.status-badge.COLD { background: #e0e7ff; color: #4338ca; }
+.status-badge.UNQUALIFIED { background: #f3f4f6; color: #4b5563; }
+
+.lead-meta {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Right Panel */
+.detail-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f9fafb;
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 1.125rem;
+}
+
+.detail-header {
+    background: white;
+    padding: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.detail-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1rem 2rem;
+}
+
+.info-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.info-card h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.info-card p {
+    font-weight: 600;
+}
+
+.requirements {
+    background: white;
+    margin: 0 2rem 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.requirements h3 {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.conversation-section {
+    flex: 1;
+    margin: 0 2rem 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.conversation-section h3 {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    font-size: 0.875rem;
+}
+
+.chat-window {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background: #efeae2; /* WhatsApp-like background */
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.bubble {
+    max-width: 70%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.bubble.customer {
+    align-self: flex-start;
+    background: white;
+    border-top-left-radius: 0;
+}
+
+.bubble.ai {
+    align-self: flex-end;
+    background: #d9fdd3;
+    border-top-right-radius: 0;
+}
+
+.action-footer {
+    padding: 1rem 2rem;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+}
+
+.primary-btn {
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.primary-btn:hover {
+    background: #128C7E;
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OQULIX - Lead Management Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">OQULIX<span>AI</span> Leads</div>
+        <div class="stats">
+            <span class="stat-badge hot-badge">🔥 <span id="hot-count">0</span> HOT</span>
+            <span class="stat-badge">Total: <span id="total-count">0</span></span>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Leads List Panel -->
+        <section class="leads-panel">
+            <div class="panel-header">
+                <h2>Recent Leads</h2>
+                <button onclick="fetchLeads()" class="refresh-btn">🔄 Refresh</button>
+            </div>
+            <div class="leads-list" id="leads-list">
+                <!-- Lead cards will be injected here -->
+                <div class="loading">Loading leads...</div>
+            </div>
+        </section>
+
+        <!-- Lead Detail Panel -->
+        <section class="detail-panel" id="detail-panel" style="display: none;">
+            <div class="detail-header">
+                <div>
+                    <h2 id="detail-name">Customer Name</h2>
+                    <p id="detail-phone">+91 0000000000</p>
+                </div>
+                <div class="badges" id="detail-badges">
+                    <span class="status-badge HOT">HOT</span>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Service</h3>
+                    <p id="detail-service">-</p>
+                </div>
+                <div class="info-card">
+                    <h3>Timeline</h3>
+                    <p id="detail-timeline">-</p>
+                </div>
+                <div class="info-card">
+                    <h3>Budget</h3>
+                    <p id="detail-budget">-</p>
+                </div>
+                <div class="info-card">
+                    <h3>Score</h3>
+                    <p id="detail-score">0/100</p>
+                </div>
+            </div>
+            
+            <div class="requirements">
+                <h3>Requirements</h3>
+                <p id="detail-requirements">-</p>
+            </div>
+
+            <div class="conversation-section">
+                <h3>WhatsApp Conversation</h3>
+                <div class="chat-window" id="chat-window">
+                    <!-- Chat bubbles injected here -->
+                </div>
+            </div>
+
+            <div class="action-footer">
+                <button class="primary-btn">📞 Take Over (Mark Human)</button>
+            </div>
+        </section>
+        
+        <div id="empty-state" class="empty-state">
+            <p>Select a lead to view details.</p>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
