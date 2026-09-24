@@ -23,14 +23,14 @@ async function ingestKnowledge() {
 
   const content = fs.readFileSync(knowledgePath, 'utf8');
   
-  // Split content by '## ' to get sections
-  const chunks = content.split('\n## ').filter(chunk => chunk.trim() !== '');
+  // Split content by '\n# ' to get major sections
+  const chunks = content.split('\n# ').filter(chunk => chunk.trim() !== '');
   
   let totalInserted = 0;
 
   for (let i = 0; i < chunks.length; i++) {
-    // Re-add '## ' to all chunks except the first one (which might be '# OQULIX Website Information')
-    const chunkContent = (i === 0 || chunks[i].startsWith('#')) ? chunks[i].trim() : '## ' + chunks[i].trim();
+    // Re-add '# ' to all chunks except the first one (which might be '# OQULIX...')
+    const chunkContent = (i === 0 || chunks[i].startsWith('#')) ? chunks[i].trim() : '# ' + chunks[i].trim();
     
     // Extract category (the heading text)
     const lines = chunkContent.split('\n');
