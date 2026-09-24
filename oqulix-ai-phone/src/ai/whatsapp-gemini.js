@@ -91,7 +91,7 @@ URGENCY GUIDELINES:
       required: ["response_text", "lead_data"]
     };
 
-    let retries = 3;
+    let retries = 5;
     while (retries > 0) {
       try {
         const response = await ai.models.generateContent({
@@ -118,8 +118,8 @@ URGENCY GUIDELINES:
             lead_data: {}
           };
         }
-        // Wait 3 seconds before retrying
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait 12 seconds before retrying to ensure we pass Google's 1-minute rate limit window
+        await new Promise(resolve => setTimeout(resolve, 12000));
       }
     }
   } catch (outerError) {
