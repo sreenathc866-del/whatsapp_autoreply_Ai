@@ -161,7 +161,7 @@ async function processIncomingWhatsApp(phoneNumber, customerName, incomingMessag
   const isGreeting = /^(hello|hi|hey|good morning|good afternoon|good evening|good night)$/i.test(cleanMessage);
 
   if (isGreeting) {
-    const instantReply = `Hello ${customerName || ''}! Welcome to OQULIX Technology. I am your AI assistant. How can I help you today?`;
+    const instantReply = `Hi ${customerName ? customerName.trim() : 'there'}! 👋 Welcome to OQULIX. How can I help you out today?`;
     await sendWhatsAppMessage(phoneNumber, instantReply);
     
     if (lead) {
