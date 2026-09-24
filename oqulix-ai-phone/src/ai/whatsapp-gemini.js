@@ -97,7 +97,7 @@ URGENCY GUIDELINES:
   } catch (error) {
     console.error('Error generating WhatsApp answer with Gemini:', error);
     return {
-      response_text: "I'm sorry, I'm experiencing some technical difficulties right now. Can I have a team member contact you?",
+      response_text: "Hey, my system is being a bit slow right now. Let me have one of our team members reach out to you shortly to help!",
       lead_data: {
         human_needed: true
       }
