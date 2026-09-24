@@ -239,10 +239,14 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
   console.log(`[WhatsApp] Extracted Lead Data:`, leadData);
 
   // 4. Send response back to customer on WhatsApp
-  await sendWhatsAppMessage(phoneNumber, responseText);
+  if (responseText && responseText.trim().length > 0) {
+    await sendWhatsAppMessage(phoneNumber, responseText);
+  } else {
+    console.log(`[WhatsApp] AI Response was empty. Skipping sending to WhatsApp.`);
+  }
 
   // 5. Save AI response and update lead in DB (if DB available)
-  if (lead) {
+  if (lead && responseText && responseText.trim().length > 0) {
     try {
       await supabase.from('conversations').insert([{
         lead_id: lead.id,

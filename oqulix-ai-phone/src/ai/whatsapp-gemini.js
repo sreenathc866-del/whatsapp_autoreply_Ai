@@ -91,29 +91,40 @@ URGENCY GUIDELINES:
       required: ["response_text", "lead_data"]
     };
 
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.2, // Low temperature for consistent JSON extraction
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
-      }
-    });
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        const response = await ai.models.generateContent({
+          model: GEMINI_MODEL,
+          contents: contents,
+          config: {
+            systemInstruction: systemInstruction,
+            temperature: 0.2, // Low temperature for consistent JSON extraction
+            responseMimeType: "application/json",
+            responseSchema: responseSchema,
+          }
+        });
 
-    // Parse the JSON output
-    const jsonOutput = JSON.parse(response.text);
-    return jsonOutput;
-
-  } catch (error) {
-    console.error('Error generating WhatsApp answer with Gemini:', error);
-    return {
-      response_text: "Hey, my system is being a bit slow right now. Let me have one of our team members reach out to you shortly to help!",
-      lead_data: {
-        human_needed: true
+        // Parse the JSON output
+        const jsonOutput = JSON.parse(response.text);
+        return jsonOutput;
+      } catch (error) {
+        console.error(`[WhatsApp] Gemini API Error (Retries left: ${retries - 1}):`, error.message || error);
+        retries--;
+        if (retries === 0) {
+          console.error('[WhatsApp] Gemini API failed after all retries. Silently ignoring to prevent AI-like fallback messages.');
+          return {
+            response_text: "", // Empty string so we don't send a robotic fallback
+            lead_data: {}
+          };
+        }
+        // Wait 3 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
-    };
+    }
+  } catch (outerError) {
+    console.error('[WhatsApp] Unhandled error in generateWhatsAppResponse:', outerError.message || outerError);
+    return { response_text: "", lead_data: {} };
   }
 }
 
