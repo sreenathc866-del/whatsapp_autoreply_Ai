@@ -2,7 +2,7 @@ require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 /**
  * Handles the WhatsApp AI conversation and extracts lead qualification data using structured output.
@@ -109,7 +109,7 @@ URGENCY GUIDELINES:
   } catch (error) {
     console.error('Error generating WhatsApp answer with Gemini:', error);
     return {
-      response_text: `[DEBUG ERROR]: ${error.message || error}`,
+      response_text: "Hey, my system is being a bit slow right now. Let me have one of our team members reach out to you shortly to help!",
       lead_data: {
         human_needed: true
       }
