@@ -67,7 +67,14 @@ async function loadLeadDetail(lead) {
         messages.forEach(msg => {
             const bubble = document.createElement('div');
             bubble.className = `bubble ${msg.sender === 'customer' ? 'customer' : 'ai'}`;
-            bubble.innerText = msg.message;
+            
+            if (msg.message.startsWith('[Voice Message] ')) {
+                const url = msg.message.replace('[Voice Message] ', '');
+                bubble.innerHTML = `🎤 Voice Note<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
+            } else {
+                bubble.innerText = msg.message;
+            }
+            
             chatWindow.appendChild(bubble);
         });
         

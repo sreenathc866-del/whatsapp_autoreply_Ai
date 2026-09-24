@@ -11,7 +11,7 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
  * @param {Array} conversationHistory - Array of previous { role, text } objects.
  * @returns {Promise<Object>} - Contains { response_text, lead_data }
  */
-async function generateWhatsAppResponse(incomingMessage, context, conversationHistory = []) {
+async function generateWhatsAppResponse(incomingMessage, context, conversationHistory = [], audioData = null) {
   try {
     const systemInstruction = `You are a friendly, human-like sales representative for Oqulix Technology chatting on WhatsApp.
 Your job is to qualify leads coming from Facebook/Instagram ads while providing excellent, warm customer service.
@@ -49,7 +49,19 @@ URGENCY GUIDELINES:
     for (const msg of historyToUse) {
       contents.push({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
     }
-    contents.push({ role: 'user', parts: [{ text: incomingMessage }] });
+    let finalParts = [];
+    if (audioData) {
+      finalParts.push({ text: "User sent a voice message. Please listen to this audio and reply to them." });
+      finalParts.push({
+        inlineData: {
+          mimeType: audioData.mimeType,
+          data: audioData.base64
+        }
+      });
+    } else {
+      finalParts.push({ text: incomingMessage });
+    }
+    contents.push({ role: 'user', parts: finalParts });
 
     // We define the JSON schema we want Gemini to return
     const responseSchema = {

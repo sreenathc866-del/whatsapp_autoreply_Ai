@@ -142,11 +142,10 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         let customerName = body.entry[0].changes[0].value.contacts[0].profile.name;
         let msg = body.entry[0].changes[0].value.messages[0];
         
-        if (msg.type === "text") {
-          let incomingMessage = msg.text.body;
+        if (msg.type === "text" || msg.type === "audio") {
           let messageId = msg.id;
           // Process message asynchronously so we can return 200 OK immediately
-          processIncomingWhatsApp(phoneNumber, customerName, incomingMessage, messageId).catch(err => {
+          processIncomingWhatsApp(phoneNumber, customerName, msg, messageId).catch(err => {
              console.error("[WhatsApp] Error processing message:", err);
           });
         }

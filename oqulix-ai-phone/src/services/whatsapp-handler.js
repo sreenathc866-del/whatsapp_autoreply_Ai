@@ -77,9 +77,59 @@ async function markMessageAsRead(messageId) {
 }
 
 /**
+ * Download WhatsApp Media and upload to Supabase Storage
+ */
+async function downloadWhatsAppMedia(mediaId) {
+  const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
+  try {
+    const res = await axios.get(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { 'Authorization': `Bearer ${WHATSAPP_TOKEN}` }
+    });
+    const mediaUrl = res.data.url;
+    const mimeType = res.data.mime_type;
+    
+    const mediaRes = await axios.get(mediaUrl, {
+      responseType: 'arraybuffer',
+      headers: { 'Authorization': `Bearer ${WHATSAPP_TOKEN}` }
+    });
+    
+    const ext = mimeType.split('/')[1] || 'ogg';
+    const filename = `${Date.now()}-${mediaId}.${ext.split(';')[0]}`;
+    
+    const { data, error } = await supabase.storage.from('whatsapp_media').upload(filename, mediaRes.data, {
+      contentType: mimeType
+    });
+    
+    if (error) throw error;
+    
+    const publicUrl = supabase.storage.from('whatsapp_media').getPublicUrl(filename).data.publicUrl;
+    return { publicUrl, mimeType, base64: Buffer.from(mediaRes.data).toString('base64') };
+  } catch (error) {
+    console.error("[WhatsApp] Failed to download media:", error.message);
+    return null;
+  }
+}
+
+/**
  * Process an incoming WhatsApp message.
  */
-async function processIncomingWhatsApp(phoneNumber, customerName, incomingMessage, messageId) {
+async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, messageId) {
+  let incomingMessage = "";
+  let audioData = null;
+  
+  if (msgObject.type === 'text') {
+    incomingMessage = msgObject.text.body;
+  } else if (msgObject.type === 'audio') {
+    console.log(`[WhatsApp] Downloading audio message...`);
+    const media = await downloadWhatsAppMedia(msgObject.audio.id);
+    if (media) {
+      incomingMessage = `[Voice Message] ${media.publicUrl}`;
+      audioData = media;
+    } else {
+      incomingMessage = "[Voice Message - Failed to download]";
+    }
+  }
+
   console.log(`\n=== Incoming WhatsApp from ${phoneNumber} (${customerName || 'Unknown'}) ===`);
   console.log(`Message: "${incomingMessage}"`);
 
@@ -180,7 +230,7 @@ async function processIncomingWhatsApp(phoneNumber, customerName, incomingMessag
 
   // 3. Gemini AI Response & Lead Qualification
   console.log(`[WhatsApp] Generating AI response using company knowledge...`);
-  const aiResult = await generateWhatsAppResponse(incomingMessage, context, formattedHistory);
+  const aiResult = await generateWhatsAppResponse(incomingMessage, context, formattedHistory, audioData);
   
   const responseText = aiResult.response_text;
   const leadData = aiResult.lead_data || {};
