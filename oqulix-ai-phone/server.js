@@ -11,6 +11,13 @@ const { processUserAudio, processUserText } = require('./src/services/voice-pipe
 const { processIncomingWhatsApp } = require('./src/services/whatsapp-handler');
 const { createClient } = require('@supabase/supabase-js');
 
+// --- In-Memory Cache for WhatsApp Webhook Deduplication ---
+const processedMessages = new Set();
+setInterval(() => {
+  processedMessages.clear();
+}, 60 * 60 * 1000); // Clear every hour
+// --------------------------------------------------------
+
 // Supabase client for Admin API
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -144,6 +151,13 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         
         if (msg.type === "text" || msg.type === "audio") {
           let messageId = msg.id;
+          
+          if (processedMessages.has(messageId)) {
+            console.log(`[WhatsApp] Ignoring duplicate message ID: ${messageId}`);
+            return res.sendStatus(200);
+          }
+          processedMessages.add(messageId);
+
           // Process message asynchronously so we can return 200 OK immediately
           processIncomingWhatsApp(phoneNumber, customerName, msg, messageId).catch(err => {
              console.error("[WhatsApp] Error processing message:", err);
