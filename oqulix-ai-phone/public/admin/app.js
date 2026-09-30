@@ -157,6 +157,33 @@ async function markHuman() {
     }
 }
 
+async function resumeAi() {
+    if (!currentLeadId) return;
+    
+    try {
+        const btn = document.getElementById('resume-btn');
+        btn.innerText = "Resuming...";
+        btn.disabled = true;
+
+        const response = await fetch(`/api/admin/leads/${currentLeadId}/resume`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            btn.innerText = "▶️ Resume AI";
+            btn.disabled = false;
+            fetchLeads(); 
+            const lead = {id: currentLeadId, human_needed: false, phone_number: document.getElementById('detail-phone').innerText};
+            loadLeadDetail(lead);
+        } else {
+            btn.innerText = "Failed. Try again.";
+            btn.disabled = false;
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 function goBack() {
     document.getElementById('detail-panel').style.display = 'none';
     if (window.innerWidth > 768) {

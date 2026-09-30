@@ -217,18 +217,24 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
         }
 
         // --- NEW: 10-Minute AI Pause Logic ---
-        // Find the last admin interaction (either an admin message or an 'AI_PAUSED' system event)
-        const humanInterventions = chronologicalHistory.filter(r => r.sender === 'admin' || (r.sender === 'system' && r.message === 'AI_PAUSED'));
+        // Find the last admin interaction (admin message, 'AI_PAUSED', or 'AI_RESUMED')
+        const humanInterventions = chronologicalHistory.filter(r => 
+          r.sender === 'admin' || (r.sender === 'system' && (r.message === 'AI_PAUSED' || r.message === 'AI_RESUMED'))
+        );
         let aiIsPaused = false;
         
         if (humanInterventions.length > 0) {
           const lastIntervention = humanInterventions[humanInterventions.length - 1];
-          const timeSinceIntervention = new Date() - new Date(lastIntervention.timestamp);
-          const tenMinutes = 10 * 60 * 1000;
-          
-          if (timeSinceIntervention < tenMinutes) {
-            aiIsPaused = true;
-            console.log(`[WhatsApp] AI is PAUSED. Human agent was active ${Math.round(timeSinceIntervention/1000)} seconds ago. Skipping response.`);
+          if (lastIntervention.message !== 'AI_RESUMED') {
+            const timeSinceIntervention = new Date() - new Date(lastIntervention.timestamp);
+            const tenMinutes = 10 * 60 * 1000;
+            
+            if (timeSinceIntervention < tenMinutes) {
+              aiIsPaused = true;
+              console.log(`[WhatsApp] AI is PAUSED. Human agent was active ${Math.round(timeSinceIntervention/1000)} seconds ago. Skipping response.`);
+            }
+          } else {
+            console.log(`[WhatsApp] AI was manually RESUMED. Responding normally.`);
           }
         }
         

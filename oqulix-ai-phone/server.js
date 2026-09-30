@@ -250,6 +250,27 @@ app.post('/api/admin/leads/:id/takeover', async (req, res) => {
   }
 });
 
+app.post('/api/admin/leads/:id/resume', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('leads')
+      .update({ human_needed: false })
+      .eq('id', id);
+      
+    await supabase.from('conversations').insert([{
+      lead_id: id,
+      sender: 'system',
+      message: 'AI_RESUMED'
+    }]);
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/leads/:id/message', async (req, res) => {
   try {
     const { id } = req.params;
