@@ -69,13 +69,17 @@ async function loadLeadDetail(lead) {
             
             let bubbleClass = 'ai';
             if (msg.sender === 'customer') bubbleClass = 'customer';
-            else if (msg.sender === 'admin') bubbleClass = 'customer'; // Use same styling as customer or create a new one, but let's just make it right aligned
+            else if (msg.sender === 'admin') bubbleClass = 'ai'; // AI class aligns to the right
             else if (msg.sender === 'system') bubbleClass = 'system';
             
             bubble.className = `bubble ${bubbleClass}`;
-            if (msg.sender === 'admin') bubble.style.backgroundColor = '#22c55e'; // Green for admin
+            if (msg.sender === 'admin') {
+               bubble.style.backgroundColor = '#dcf8c6'; // WhatsApp light green
+               bubble.style.color = '#000';
+            }
             if (msg.sender === 'system') {
                bubble.style.backgroundColor = '#666';
+               bubble.style.color = '#fff';
                bubble.style.textAlign = 'center';
                bubble.style.margin = '10px auto';
             }
