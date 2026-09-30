@@ -236,9 +236,46 @@ app.post('/api/admin/leads/:id/takeover', async (req, res) => {
       .update({ human_needed: true })
       .eq('id', id);
       
+    // Also insert a system message to mark the exact pause time for the 10-minute logic
+    await supabase.from('conversations').insert([{
+      lead_id: id,
+      sender: 'system',
+      message: 'AI_PAUSED'
+    }]);
+
     if (error) throw error;
     res.json({ success: true });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/leads/:id/message', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text } = req.body;
+    
+    // Get lead phone number
+    const { data: lead } = await supabase.from('leads').select('phone_number').eq('id', id).single();
+    if (!lead) throw new Error("Lead not found");
+
+    // Send via WhatsApp
+    const { sendWhatsAppMessage } = require('./src/services/whatsapp-handler');
+    await sendWhatsAppMessage(lead.phone_number, text);
+
+    // Save to conversation history as admin
+    await supabase.from('conversations').insert([{
+      lead_id: id,
+      sender: 'admin',
+      message: text
+    }]);
+    
+    // Ensure human_needed is true
+    await supabase.from('leads').update({ human_needed: true }).eq('id', id);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Admin message error:", error);
     res.status(500).json({ error: error.message });
   }
 });

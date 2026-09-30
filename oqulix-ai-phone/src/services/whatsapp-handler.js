@@ -161,9 +161,11 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
       console.log(`[WhatsApp] Found existing lead: ${lead.id} (${lead.lead_status})`);
     }
 
-    // Check human handoff
+    // Check human handoff and pause logic
+    // We will do this AFTER saving the customer message so we can use chronologicalHistory
+    // to check the 10-minute timer. But for legacy compatibility, if it's explicitly assigned_agent we can still return early.
     if (lead && lead.human_needed && lead.assigned_agent) {
-      console.log(`[WhatsApp] Human agent is handling this lead. AI skipping automatic response.`);
+      console.log(`[WhatsApp] Human agent is explicitly assigned. AI skipping automatic response.`);
       await supabase.from('conversations').insert([{
         lead_id: lead.id,
         sender: 'customer',
@@ -212,6 +214,26 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
               return; // Skip generating an AI response to prevent repeating the bot
             }
           }
+        }
+
+        // --- NEW: 10-Minute AI Pause Logic ---
+        // Find the last admin interaction (either an admin message or an 'AI_PAUSED' system event)
+        const humanInterventions = chronologicalHistory.filter(r => r.sender === 'admin' || (r.sender === 'system' && r.message === 'AI_PAUSED'));
+        let aiIsPaused = false;
+        
+        if (humanInterventions.length > 0) {
+          const lastIntervention = humanInterventions[humanInterventions.length - 1];
+          const timeSinceIntervention = new Date() - new Date(lastIntervention.timestamp);
+          const tenMinutes = 10 * 60 * 1000;
+          
+          if (timeSinceIntervention < tenMinutes) {
+            aiIsPaused = true;
+            console.log(`[WhatsApp] AI is PAUSED. Human agent was active ${Math.round(timeSinceIntervention/1000)} seconds ago. Skipping response.`);
+          }
+        }
+        
+        if (aiIsPaused) {
+           return; // Stop here, do not generate AI response
         }
 
         formattedHistory = chronologicalHistory.slice(0, -1).map(row => ({
@@ -334,5 +356,6 @@ function notifySalesTeam(leadData, lastMessage) {
 }
 
 module.exports = {
-  processIncomingWhatsApp
+  processIncomingWhatsApp,
+  sendWhatsAppMessage
 };

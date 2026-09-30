@@ -74,7 +74,11 @@
             </div>
 
             <div class="action-footer">
-                <button id="takeover-btn" class="primary-btn" onclick="markHuman()">📞 Take Over (Mark Human)</button>
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button id="takeover-btn" class="primary-btn" onclick="markHuman()" style="flex: 0 0 auto;">⏸ Pause AI (10m)</button>
+                    <input type="text" id="admin-reply-input" placeholder="Type a message to send..." style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: var(--card-bg); color: white;">
+                    <button class="primary-btn" onclick="sendAdminReply()" style="flex: 0 0 auto; background: var(--success);">Send</button>
+                </div>
             </div>
         </section>
         

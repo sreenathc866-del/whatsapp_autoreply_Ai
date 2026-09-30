@@ -66,13 +66,25 @@ async function loadLeadDetail(lead) {
         
         messages.forEach(msg => {
             const bubble = document.createElement('div');
-            bubble.className = `bubble ${msg.sender === 'customer' ? 'customer' : 'ai'}`;
+            
+            let bubbleClass = 'ai';
+            if (msg.sender === 'customer') bubbleClass = 'customer';
+            else if (msg.sender === 'admin') bubbleClass = 'customer'; // Use same styling as customer or create a new one, but let's just make it right aligned
+            else if (msg.sender === 'system') bubbleClass = 'system';
+            
+            bubble.className = `bubble ${bubbleClass}`;
+            if (msg.sender === 'admin') bubble.style.backgroundColor = '#22c55e'; // Green for admin
+            if (msg.sender === 'system') {
+               bubble.style.backgroundColor = '#666';
+               bubble.style.textAlign = 'center';
+               bubble.style.margin = '10px auto';
+            }
             
             if (msg.message.startsWith('[Voice Message] ')) {
                 const url = msg.message.replace('[Voice Message] ', '');
                 bubble.innerHTML = `🎤 Voice Note<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
             } else {
-                bubble.innerText = msg.message;
+                bubble.innerText = msg.sender === 'admin' ? `👨‍💻 Admin: ${msg.message}` : msg.message;
             }
             
             chatWindow.appendChild(bubble);
@@ -110,9 +122,13 @@ async function markHuman() {
         });
         
         if (response.ok) {
-            btn.innerText = "Taken Over (AI Paused)";
+            btn.innerText = "AI Paused (10m)";
             btn.style.backgroundColor = "#666";
-            fetchLeads(); // Refresh list
+            // Refresh list and chat
+            fetchLeads(); 
+            // Mock a reload of the lead to show the system message
+            const lead = {id: currentLeadId, human_needed: true, phone_number: document.getElementById('detail-phone').innerText};
+            loadLeadDetail(lead);
         } else {
             btn.innerText = "Failed. Try again.";
             btn.disabled = false;
@@ -126,6 +142,38 @@ function goBack() {
     document.getElementById('detail-panel').style.display = 'none';
     if (window.innerWidth > 768) {
         document.getElementById('empty-state').style.display = 'flex';
+    }
+}
+
+async function sendAdminReply() {
+    if (!currentLeadId) return;
+    const input = document.getElementById('admin-reply-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/admin/leads/${currentLeadId}/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        
+        if (response.ok) {
+            input.value = '';
+            // Refresh the chat
+            const lead = {id: currentLeadId, human_needed: true, phone_number: document.getElementById('detail-phone').innerText};
+            loadLeadDetail(lead);
+        } else {
+            alert('Failed to send message');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error sending message');
+    } finally {
+        input.disabled = false;
+        input.focus();
     }
 }
 
