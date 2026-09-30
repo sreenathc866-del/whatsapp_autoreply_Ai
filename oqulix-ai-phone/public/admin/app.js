@@ -84,12 +84,23 @@ async function loadLeadDetail(lead) {
                bubble.style.margin = '10px auto';
             }
             
+            let timeStr = "";
+            if (msg.timestamp) {
+               timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+            const timeHtml = `<div style="font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px;">${timeStr}</div>`;
+            
+            let contentHtml = "";
             if (msg.message.startsWith('[Voice Message] ')) {
                 const url = msg.message.replace('[Voice Message] ', '');
-                bubble.innerHTML = `🎤 Voice Note<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
+                contentHtml = `🎤 Voice Note<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
             } else {
-                bubble.innerText = msg.sender === 'admin' ? `👨‍💻 Admin: ${msg.message}` : msg.message;
+                // Escape HTML for text messages
+                const escapedText = msg.message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                contentHtml = msg.sender === 'admin' ? `👨‍💻 Admin: ${escapedText}` : escapedText;
             }
+            
+            bubble.innerHTML = contentHtml + timeHtml;
             
             chatWindow.appendChild(bubble);
         });
