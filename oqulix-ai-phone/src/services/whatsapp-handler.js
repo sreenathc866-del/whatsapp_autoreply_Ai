@@ -186,7 +186,7 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
       // Fetch history (get latest 10 messages)
       const { data: history } = await supabase
         .from('conversations')
-        .select('sender, message')
+        .select('sender, message, timestamp')
         .eq('lead_id', lead.id)
         .order('timestamp', { ascending: false })
         .limit(10);
@@ -194,15 +194,23 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
       if (history) {
         const chronologicalHistory = history.reverse();
         
-        // Anti-spam / deduplication: if the user sends the exact same message back-to-back, ignore it.
+        // Anti-spam / deduplication: if the user sends the exact same message back-to-back within 5 minutes, ignore it.
         const userMessagesOnly = chronologicalHistory.filter(r => r.sender === 'customer');
         if (userMessagesOnly.length >= 2) {
-          const currentMsg = userMessagesOnly[userMessagesOnly.length - 1].message.trim().toLowerCase();
-          const prevMsg = userMessagesOnly[userMessagesOnly.length - 2].message.trim().toLowerCase();
+          const currentMsgObj = userMessagesOnly[userMessagesOnly.length - 1];
+          const prevMsgObj = userMessagesOnly[userMessagesOnly.length - 2];
+          
+          const currentMsg = currentMsgObj.message.trim().toLowerCase();
+          const prevMsg = prevMsgObj.message.trim().toLowerCase();
           
           if (currentMsg === prevMsg) {
-            console.log(`[WhatsApp] Ignoring consecutive duplicate message from user: "${currentMsg}"`);
-            return; // Skip generating an AI response to prevent repeating the bot
+            const timeDiff = new Date(currentMsgObj.timestamp) - new Date(prevMsgObj.timestamp);
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            if (timeDiff < fiveMinutes) {
+              console.log(`[WhatsApp] Ignoring consecutive duplicate message from user within 5 mins: "${currentMsg}"`);
+              return; // Skip generating an AI response to prevent repeating the bot
+            }
           }
         }
 
