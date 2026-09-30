@@ -123,15 +123,9 @@ async function loadLeadDetail(lead) {
     
     // Reset takeover button state
     const takeoverBtn = document.getElementById('takeover-btn');
-    if (lead.human_needed) {
-        takeoverBtn.innerText = "Taken Over (AI Paused)";
-        takeoverBtn.style.backgroundColor = "#666";
-        takeoverBtn.disabled = true;
-    } else {
-        takeoverBtn.innerText = "📞 Take Over (Mark Human)";
-        takeoverBtn.style.backgroundColor = "var(--primary)";
-        takeoverBtn.disabled = false;
-    }
+    takeoverBtn.innerText = "⏸ Pause AI (10m)";
+    takeoverBtn.style.backgroundColor = "#6b7280";
+    takeoverBtn.disabled = false;
 }
 
 async function markHuman() {
