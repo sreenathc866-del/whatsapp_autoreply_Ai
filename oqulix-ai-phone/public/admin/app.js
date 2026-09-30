@@ -88,7 +88,17 @@ async function loadLeadDetail(lead) {
             if (msg.timestamp) {
                timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             }
-            const timeHtml = `<div style="font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px;">${timeStr}</div>`;
+            
+            // Add tick mark for admin/ai messages
+            let tickHtml = "";
+            if (msg.sender === 'admin' || msg.sender === 'ai') {
+                tickHtml = "<span>✅</span>"; // Assuming already sent since it's in the DB
+            }
+            
+            const timeHtml = `<div style="font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
+                <span>${timeStr}</span>
+                ${tickHtml}
+            </div>`;
             
             let contentHtml = "";
             if (msg.message.startsWith('[Voice Message] ')) {
@@ -176,7 +186,11 @@ async function sendAdminReply() {
     bubble.style.color = '#000';
     
     const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    const timeHtml = `<div style="font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px;">${timeStr}</div>`;
+    const tempId = 'tick-' + Date.now();
+    const timeHtml = `<div style="font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
+        <span>${timeStr}</span>
+        <span id="${tempId}">🕓</span>
+    </div>`;
     const escapedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     
     bubble.innerHTML = `👨‍💻 Admin: ${escapedText}` + timeHtml;
@@ -190,11 +204,17 @@ async function sendAdminReply() {
             body: JSON.stringify({ text })
         });
         
-        if (!response.ok) {
+        const tickSpan = document.getElementById(tempId);
+        if (response.ok) {
+            if (tickSpan) tickSpan.innerText = '✅';
+        } else {
+            if (tickSpan) tickSpan.innerText = '❌';
             alert('Failed to send message to WhatsApp');
         }
     } catch (err) {
         console.error(err);
+        const tickSpan = document.getElementById(tempId);
+        if (tickSpan) tickSpan.innerText = '❌';
         alert('Error sending message');
     }
     
