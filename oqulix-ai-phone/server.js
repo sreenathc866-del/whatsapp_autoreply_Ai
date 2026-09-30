@@ -18,6 +18,27 @@ setInterval(() => {
 }, 60 * 60 * 1000); // Clear every hour
 // --------------------------------------------------------
 
+// --- In-Memory Queue for Sequential Processing per User ---
+const userQueues = new Map();
+
+async function processSequentially(phoneNumber, task) {
+  if (!userQueues.has(phoneNumber)) {
+    userQueues.set(phoneNumber, Promise.resolve());
+  }
+  
+  const queue = userQueues.get(phoneNumber);
+  const nextTask = queue.then(() => task()).catch(err => console.error(err));
+  
+  userQueues.set(phoneNumber, nextTask);
+  
+  nextTask.finally(() => {
+    if (userQueues.get(phoneNumber) === nextTask) {
+      userQueues.delete(phoneNumber);
+    }
+  });
+}
+// --------------------------------------------------------
+
 // Supabase client for Admin API
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -158,10 +179,10 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
           }
           processedMessages.add(messageId);
 
-          // Process message asynchronously so we can return 200 OK immediately
-          processIncomingWhatsApp(phoneNumber, customerName, msg, messageId).catch(err => {
-             console.error("[WhatsApp] Error processing message:", err);
-          });
+          // Process message asynchronously but sequentially per user so we can return 200 OK immediately
+          processSequentially(phoneNumber, () => 
+            processIncomingWhatsApp(phoneNumber, customerName, msg, messageId)
+          );
         }
       }
       res.sendStatus(200);
