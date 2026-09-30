@@ -1,4 +1,5 @@
 let currentLeadId = null;
+let isAiPaused = false;
 
 async function fetchLeads() {
     try {
@@ -64,6 +65,23 @@ async function loadLeadDetail(lead) {
         const chatWindow = document.getElementById('chat-window');
         chatWindow.innerHTML = '';
         
+        // Calculate current AI state
+        const humanInterventions = messages.filter(msg => 
+            msg.sender === 'admin' || (msg.sender === 'system' && (msg.message === 'AI_PAUSED' || msg.message === 'AI_RESUMED'))
+        );
+        
+        isAiPaused = false;
+        if (humanInterventions.length > 0) {
+            const lastIntervention = humanInterventions[humanInterventions.length - 1];
+            if (lastIntervention.message !== 'AI_RESUMED') {
+                const timeDiff = new Date() - new Date(lastIntervention.timestamp);
+                if (timeDiff < 10 * 60 * 1000) {
+                    isAiPaused = true;
+                }
+            }
+        }
+        updateToggleBtn();
+        
         messages.forEach(msg => {
             const bubble = document.createElement('div');
             
@@ -121,66 +139,43 @@ async function loadLeadDetail(lead) {
         console.error('Error fetching conversations:', error);
     }
     
-    // Reset takeover button state
-    const takeoverBtn = document.getElementById('takeover-btn');
-    takeoverBtn.innerText = "⏸ Pause AI (10m)";
-    takeoverBtn.style.backgroundColor = "#6b7280";
-    takeoverBtn.disabled = false;
+    // The button state is now handled by updateToggleBtn() above
 }
 
-async function markHuman() {
-    if (!currentLeadId) return;
-    
-    try {
-        const btn = document.getElementById('takeover-btn');
-        btn.innerText = "Taking over...";
-        btn.disabled = true;
-
-        const response = await fetch(`/api/admin/leads/${currentLeadId}/takeover`, {
-            method: 'POST'
-        });
-        
-        if (response.ok) {
-            btn.innerText = "AI Paused (10m)";
-            btn.style.backgroundColor = "#666";
-            // Refresh list and chat
-            fetchLeads(); 
-            // Mock a reload of the lead to show the system message
-            const lead = {id: currentLeadId, human_needed: true, phone_number: document.getElementById('detail-phone').innerText};
-            loadLeadDetail(lead);
-        } else {
-            btn.innerText = "Failed. Try again.";
-            btn.disabled = false;
-        }
-    } catch (err) {
-        console.error(err);
+function updateToggleBtn() {
+    const btn = document.getElementById('ai-toggle-btn');
+    if (!btn) return;
+    if (isAiPaused) {
+        btn.innerText = "▶️ Resume AI";
+        btn.style.backgroundColor = "#3b82f6"; // Blue
+    } else {
+        btn.innerText = "⏸ Pause AI (10m)";
+        btn.style.backgroundColor = "#6b7280"; // Grey
     }
 }
 
-async function resumeAi() {
+async function toggleAi() {
     if (!currentLeadId) return;
+    const btn = document.getElementById('ai-toggle-btn');
+    btn.disabled = true;
     
     try {
-        const btn = document.getElementById('resume-btn');
-        btn.innerText = "Resuming...";
-        btn.disabled = true;
-
-        const response = await fetch(`/api/admin/leads/${currentLeadId}/resume`, {
-            method: 'POST'
-        });
-        
-        if (response.ok) {
-            btn.innerText = "▶️ Resume AI";
-            btn.disabled = false;
-            fetchLeads(); 
-            const lead = {id: currentLeadId, human_needed: false, phone_number: document.getElementById('detail-phone').innerText};
-            loadLeadDetail(lead);
+        if (isAiPaused) {
+            btn.innerText = "Resuming...";
+            await fetch(`/api/admin/leads/${currentLeadId}/resume`, { method: 'POST' });
         } else {
-            btn.innerText = "Failed. Try again.";
-            btn.disabled = false;
+            btn.innerText = "Pausing...";
+            await fetch(`/api/admin/leads/${currentLeadId}/takeover`, { method: 'POST' });
         }
+        
+        fetchLeads(); 
+        const lead = {id: currentLeadId, phone_number: document.getElementById('detail-phone').innerText};
+        loadLeadDetail(lead);
     } catch (err) {
         console.error(err);
+        alert('Error toggling AI state');
+    } finally {
+        btn.disabled = false;
     }
 }
 
