@@ -166,7 +166,22 @@ async function sendAdminReply() {
     const text = input.value.trim();
     if (!text) return;
 
-    input.disabled = true;
+    // Optimistic UI Update: Instantly show the message on the screen
+    input.value = '';
+    
+    const chatWindow = document.getElementById('chat-window');
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ai`;
+    bubble.style.backgroundColor = '#dcf8c6';
+    bubble.style.color = '#000';
+    
+    const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const timeHtml = `<div style="font-size: 0.7rem; opacity: 0.6; text-align: right; margin-top: 4px;">${timeStr}</div>`;
+    const escapedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    
+    bubble.innerHTML = `👨‍💻 Admin: ${escapedText}` + timeHtml;
+    chatWindow.appendChild(bubble);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
     
     try {
         const response = await fetch(`/api/admin/leads/${currentLeadId}/message`, {
@@ -175,21 +190,15 @@ async function sendAdminReply() {
             body: JSON.stringify({ text })
         });
         
-        if (response.ok) {
-            input.value = '';
-            // Refresh the chat
-            const lead = {id: currentLeadId, human_needed: true, phone_number: document.getElementById('detail-phone').innerText};
-            loadLeadDetail(lead);
-        } else {
-            alert('Failed to send message');
+        if (!response.ok) {
+            alert('Failed to send message to WhatsApp');
         }
     } catch (err) {
         console.error(err);
         alert('Error sending message');
-    } finally {
-        input.disabled = false;
-        input.focus();
     }
+    
+    input.focus();
 }
 
 // Initial load
