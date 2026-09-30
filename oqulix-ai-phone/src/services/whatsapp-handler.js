@@ -183,16 +183,30 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
         console.error('[WhatsApp] Failed to save customer message:', insertErr);
       }
 
-      // Fetch history
+      // Fetch history (get latest 10 messages)
       const { data: history } = await supabase
         .from('conversations')
         .select('sender, message')
         .eq('lead_id', lead.id)
-        .order('timestamp', { ascending: true })
+        .order('timestamp', { ascending: false })
         .limit(10);
 
       if (history) {
-        formattedHistory = history.slice(0, -1).map(row => ({
+        const chronologicalHistory = history.reverse();
+        
+        // Anti-spam / deduplication: if the user sends the exact same message back-to-back, ignore it.
+        const userMessagesOnly = chronologicalHistory.filter(r => r.sender === 'customer');
+        if (userMessagesOnly.length >= 2) {
+          const currentMsg = userMessagesOnly[userMessagesOnly.length - 1].message.trim().toLowerCase();
+          const prevMsg = userMessagesOnly[userMessagesOnly.length - 2].message.trim().toLowerCase();
+          
+          if (currentMsg === prevMsg) {
+            console.log(`[WhatsApp] Ignoring consecutive duplicate message from user: "${currentMsg}"`);
+            return; // Skip generating an AI response to prevent repeating the bot
+          }
+        }
+
+        formattedHistory = chronologicalHistory.slice(0, -1).map(row => ({
           role: row.sender === 'customer' ? 'user' : 'model',
           text: row.message
         }));
