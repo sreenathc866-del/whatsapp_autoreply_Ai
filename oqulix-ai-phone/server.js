@@ -271,6 +271,49 @@ app.post('/api/admin/leads/:id/resume', async (req, res) => {
   }
 });
 
+app.post('/api/admin/bulk-send', async (req, res) => {
+  try {
+    const { templateName, language, numbers } = req.body;
+    if (!templateName || !numbers || !Array.isArray(numbers)) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
+    const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID;
+    
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const num of numbers) {
+      try {
+        const payload = {
+          messaging_product: "whatsapp",
+          to: num,
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: language || 'en' }
+          }
+        };
+        
+        await axios.post(
+          `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
+          payload,
+          { headers: { 'Authorization': `Bearer ${WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' } }
+        );
+        successCount++;
+      } catch (err) {
+        console.error(`[Bulk Send] Failed for ${num}:`, err.response?.data || err.message);
+        failCount++;
+      }
+    }
+
+    res.json({ success: true, successCount, failCount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/leads/:id/message', async (req, res) => {
   try {
     const { id } = req.params;

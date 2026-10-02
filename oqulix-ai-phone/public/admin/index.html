@@ -21,7 +21,10 @@
         <section class="leads-panel">
             <div class="panel-header">
                 <h2>Recent Leads</h2>
-                <button onclick="fetchLeads()" class="refresh-btn">🔄 Refresh</button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="showBulkPanel()" class="refresh-btn" style="color: #10b981; font-weight: bold;">📣 Bulk Send</button>
+                    <button onclick="fetchLeads()" class="refresh-btn">🔄 Refresh</button>
+                </div>
             </div>
             <div class="leads-list" id="leads-list">
                 <!-- Lead cards will be injected here -->
@@ -82,6 +85,36 @@
             </div>
         </section>
         
+        <!-- Bulk Send Panel -->
+        <section class="detail-panel" id="bulk-panel" style="display: none; padding: 2rem; background: #f9fafb; align-items: center; justify-content: center;">
+            <div style="width: 100%; max-width: 600px; background: white; padding: 2rem; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <h2 style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    📣 Bulk Broadcast
+                    <button onclick="hideBulkPanel()" style="background: none; border: none; cursor: pointer; color: #6b7280; font-size: 1.2rem;">✖</button>
+                </h2>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Template Name</label>
+                    <input type="text" id="bulk-template" placeholder="e.g. hello_testing_" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem;">
+                    <small style="color: #6b7280;">The exact name of your approved Meta template.</small>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Language Code</label>
+                    <input type="text" id="bulk-language" value="en" placeholder="e.g. en or en_US" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Phone Numbers</label>
+                    <textarea id="bulk-numbers" rows="8" placeholder="Paste phone numbers here...&#10;One number per line&#10;Include country code (e.g. 919876543210)" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; resize: vertical; font-size: 1rem;"></textarea>
+                </div>
+
+                <button id="bulk-send-btn" class="primary-btn" onclick="sendBulkBroadcast()" style="width: 100%; background-color: #10b981; font-size: 1.1rem; padding: 12px;">🚀 Send Broadcast</button>
+                
+                <div id="bulk-status" style="margin-top: 1rem; padding: 1rem; border-radius: 4px; display: none; background: #f3f4f6;"></div>
+            </div>
+        </section>
+
         <div id="empty-state" class="empty-state">
             <p>Select a lead to view details.</p>
         </div>

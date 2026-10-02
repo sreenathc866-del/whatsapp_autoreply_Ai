@@ -186,6 +186,71 @@ function goBack() {
     }
 }
 
+// Bulk Send Feature
+function showBulkPanel() {
+    document.getElementById('detail-panel').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('bulk-panel').style.display = 'flex';
+}
+
+function hideBulkPanel() {
+    document.getElementById('bulk-panel').style.display = 'none';
+    if (currentLeadId) {
+        document.getElementById('detail-panel').style.display = 'flex';
+    } else {
+        document.getElementById('empty-state').style.display = 'flex';
+    }
+}
+
+async function sendBulkBroadcast() {
+    const templateName = document.getElementById('bulk-template').value.trim();
+    const language = document.getElementById('bulk-language').value.trim() || 'en';
+    const numbersRaw = document.getElementById('bulk-numbers').value;
+    
+    if (!templateName) return alert("Please enter the template name.");
+    if (!numbersRaw) return alert("Please enter at least one phone number.");
+
+    const numbers = numbersRaw.split('\n')
+        .map(n => n.replace(/\D/g, ''))
+        .filter(n => n.length >= 10);
+        
+    if (numbers.length === 0) return alert("No valid phone numbers found.");
+
+    const btn = document.getElementById('bulk-send-btn');
+    const statusDiv = document.getElementById('bulk-status');
+    btn.disabled = true;
+    btn.innerText = "Sending... Please wait.";
+    statusDiv.style.display = 'none';
+    
+    try {
+        const res = await fetch('/api/admin/bulk-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ templateName, language, numbers })
+        });
+        const data = await res.json();
+        
+        statusDiv.style.display = 'block';
+        if (data.success) {
+            statusDiv.innerHTML = `✅ Successfully sent to <b>${data.successCount}</b> numbers.<br>❌ Failed: <b>${data.failCount}</b>.`;
+            statusDiv.style.backgroundColor = '#d1fae5';
+            statusDiv.style.color = '#065f46';
+        } else {
+            statusDiv.innerHTML = `❌ Error: ${data.error}`;
+            statusDiv.style.backgroundColor = '#fee2e2';
+            statusDiv.style.color = '#991b1b';
+        }
+    } catch (err) {
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = `❌ Error sending broadcast.`;
+        statusDiv.style.backgroundColor = '#fee2e2';
+        statusDiv.style.color = '#991b1b';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "🚀 Send Broadcast";
+    }
+}
+
 async function sendAdminReply() {
     if (!currentLeadId) return;
     const input = document.getElementById('admin-reply-input');
