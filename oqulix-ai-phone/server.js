@@ -52,7 +52,14 @@ const wssBrowser = new WebSocket.Server({ noServer: true });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Plivo sends webhook data as URL encoded form data
-app.use(express.static('public'));
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Surrogate-Control', 'no-store');
+    }
+}));
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ============================================
@@ -228,6 +235,80 @@ app.get('/api/admin/leads/:id/conversations', async (req, res) => {
   }
 });
 
+app.delete('/api/admin/leads/:id/conversations', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 1. Fetch all conversations for this lead
+    const { data: messagesToMove, error: fetchError } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('lead_id', id);
+      
+    if (fetchError) throw fetchError;
+    
+    // 2. Insert into deleted_messages if there are any
+    if (messagesToMove && messagesToMove.length > 0) {
+      const { error: insertError } = await supabase
+        .from('deleted_messages')
+        .insert(messagesToMove);
+      if (insertError) throw insertError;
+    }
+
+    // 3. Delete from conversations
+    const { error: deleteError } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('lead_id', id);
+      
+    if (deleteError) throw deleteError;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/admin/conversations/:msgId', async (req, res) => {
+  try {
+    const { msgId } = req.params;
+    
+    // 1. Fetch the message
+    const { data: msgToMove, error: fetchError } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('id', msgId)
+      .single();
+      
+    if (fetchError) throw fetchError;
+    
+    // 2. Insert into deleted_messages
+    if (msgToMove) {
+      const { error: insertError } = await supabase
+        .from('deleted_messages')
+        .insert([msgToMove]);
+      if (insertError) throw insertError;
+      
+      // Attempt to recall from WhatsApp if it's our own message AND recall was requested
+      const shouldRecall = req.query.recall === 'true';
+      if (shouldRecall && msgToMove.wamid && msgToMove.sender !== 'customer') {
+         const { recallWhatsAppMessage } = require('./src/services/whatsapp-handler');
+         await recallWhatsAppMessage(msgToMove.wamid);
+      }
+    }
+
+    // 3. Delete from conversations
+    const { error: deleteError } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', msgId);
+      
+    if (deleteError) throw deleteError;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/leads/:id/takeover', async (req, res) => {
   try {
     const { id } = req.params;
@@ -325,21 +406,69 @@ app.post('/api/admin/leads/:id/message', async (req, res) => {
 
     // Send via WhatsApp
     const { sendWhatsAppMessage } = require('./src/services/whatsapp-handler');
-    await sendWhatsAppMessage(lead.phone_number, text);
+    const wamid = await sendWhatsAppMessage(lead.phone_number, text);
 
     // Save to conversation history as admin
-    await supabase.from('conversations').insert([{
+    const { data: newMsg } = await supabase.from('conversations').insert([{
       lead_id: id,
       sender: 'admin',
-      message: text
-    }]);
+      message: text,
+      wamid: wamid
+    }]).select().single();
     
     // Ensure human_needed is true
     await supabase.from('leads').update({ human_needed: true }).eq('id', id);
 
-    res.json({ success: true });
+    res.json({ success: true, id: newMsg?.id });
   } catch (error) {
     console.error("Admin message error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/leads/:id/media', upload.single('file'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type } = req.body; // 'image', 'video', 'audio', 'document'
+    const file = req.file;
+    
+    if (!file) throw new Error("No file provided");
+
+    // Get lead phone number
+    const { data: lead } = await supabase.from('leads').select('phone_number').eq('id', id).single();
+    if (!lead) throw new Error("Lead not found");
+
+    // Upload to Supabase Storage
+    const ext = path.extname(file.originalname) || '';
+    const filename = `admin-${Date.now()}-${id}${ext}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('whatsapp_media')
+      .upload(filename, file.buffer, { contentType: file.mimetype });
+      
+    if (uploadError) throw uploadError;
+
+    const publicUrl = supabase.storage.from('whatsapp_media').getPublicUrl(filename).data.publicUrl;
+
+    // Send via WhatsApp
+    const { sendWhatsAppMedia } = require('./src/services/whatsapp-handler');
+    const wamid = await sendWhatsAppMedia(lead.phone_number, type, publicUrl);
+
+    // Save to conversation history as admin
+    const textLabel = `[${type.charAt(0).toUpperCase() + type.slice(1)}] ${publicUrl}`;
+    const { data: newMsg } = await supabase.from('conversations').insert([{
+      lead_id: id,
+      sender: 'admin',
+      message: textLabel,
+      wamid: wamid
+    }]).select().single();
+    
+    // Ensure human_needed is true
+    await supabase.from('leads').update({ human_needed: true }).eq('id', id);
+
+    res.json({ success: true, url: publicUrl, id: newMsg?.id });
+  } catch (error) {
+    console.error("Admin media error:", error);
     res.status(500).json({ error: error.message });
   }
 });

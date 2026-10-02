@@ -42,9 +42,87 @@ async function sendWhatsAppMessage(to, text) {
         }
       }
     );
-    console.log('[WhatsApp] Outbound message sent successfully! Response ID:', response.data?.messages?.[0]?.id);
+    const wamid = response.data?.messages?.[0]?.id;
+    console.log('[WhatsApp] Outbound message sent successfully! Response ID:', wamid);
+    return wamid;
   } catch (error) {
     console.error('[WhatsApp] Failed to send message:', error.response?.data || error.message);
+    return null;
+  }
+}
+
+/**
+ * Sends media back to the customer via WhatsApp Cloud API
+ * type can be 'image', 'video', 'audio', 'document'
+ */
+async function sendWhatsAppMedia(to, type, mediaUrl) {
+  const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
+  const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID;
+
+  console.log(`[WhatsApp] Sending ${type} to ${to}: ${mediaUrl}`);
+  
+  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
+    console.warn('[WhatsApp] Warning: WHATSAPP_TOKEN or WHATSAPP_PHONE_ID missing.');
+    return;
+  }
+
+  try {
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: to,
+      type: type,
+    };
+    payload[type] = { link: mediaUrl };
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    const wamid = response.data?.messages?.[0]?.id;
+    console.log(`[WhatsApp] Outbound ${type} sent successfully! Response ID:`, wamid);
+    return wamid;
+  } catch (error) {
+    console.error(`[WhatsApp] Failed to send ${type}:`, error.response?.data || error.message);
+    return null;
+  }
+}
+
+/**
+ * Recalls (deletes for everyone) a message sent by the business.
+ */
+async function recallWhatsAppMessage(wamid) {
+  const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
+  const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID;
+  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID || !wamid) return false;
+
+  try {
+    console.log(`[WhatsApp] Recalling message ID: ${wamid}`);
+    await axios.post(
+      `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        status: "inactive",
+        message_id: wamid
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    console.log(`[WhatsApp] Successfully recalled message ID: ${wamid}`);
+    return true;
+  } catch (error) {
+    console.error(`[WhatsApp] Failed to recall message:`, error.response?.data || error.message);
+    return false;
   }
 }
 
@@ -262,13 +340,14 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
 
   if (isGreeting) {
     const instantReply = `Hi ${customerName ? customerName.trim() : 'there'}! 👋 Welcome to OQULIX. How can I help you out today?`;
-    await sendWhatsAppMessage(phoneNumber, instantReply);
+    const wamid = await sendWhatsAppMessage(phoneNumber, instantReply);
     
     if (lead) {
       await supabase.from('conversations').insert([{
         lead_id: lead.id,
         sender: 'ai',
-        message: instantReply
+        message: instantReply,
+        wamid: wamid
       }]).catch(() => {});
     }
     return; // Stop here, no need to run RAG for simple greeting
@@ -289,8 +368,9 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
   console.log(`[WhatsApp] Extracted Lead Data:`, leadData);
 
   // 4. Send response back to customer on WhatsApp
+  let wamid = null;
   if (responseText && responseText.trim().length > 0) {
-    await sendWhatsAppMessage(phoneNumber, responseText);
+    wamid = await sendWhatsAppMessage(phoneNumber, responseText);
   } else {
     console.log(`[WhatsApp] AI Response was empty. Skipping sending to WhatsApp.`);
   }
@@ -301,7 +381,8 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
       await supabase.from('conversations').insert([{
         lead_id: lead.id,
         sender: 'ai',
-        message: responseText
+        message: responseText,
+        wamid: wamid
       }]);
 
       const updates = {};
@@ -363,5 +444,7 @@ function notifySalesTeam(leadData, lastMessage) {
 
 module.exports = {
   processIncomingWhatsApp,
-  sendWhatsAppMessage
+  sendWhatsAppMessage,
+  sendWhatsAppMedia,
+  recallWhatsAppMessage
 };
