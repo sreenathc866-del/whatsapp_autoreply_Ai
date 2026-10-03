@@ -352,7 +352,6 @@ app.post('/api/admin/leads/:id/resume', async (req, res) => {
   }
 });
 
-const upload = multer({ storage: multer.memoryStorage() });
 const FormData = require('form-data');
 
 app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) => {
