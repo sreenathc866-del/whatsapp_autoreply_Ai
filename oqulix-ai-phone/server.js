@@ -10,6 +10,7 @@ const { transcribeAudio } = require('./src/services/elevenlabs-stt');
 const { processUserAudio, processUserText } = require('./src/services/voice-pipeline');
 const { processIncomingWhatsApp } = require('./src/services/whatsapp-handler');
 const { createClient } = require('@supabase/supabase-js');
+const axios = require('axios');
 
 // --- In-Memory Cache for WhatsApp Webhook Deduplication ---
 const processedMessages = new Set();
