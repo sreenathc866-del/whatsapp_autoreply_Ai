@@ -658,12 +658,14 @@ body.dark-mode .bubble.customer::after {
 }
 
 body.dark-mode .bubble.admin,
-body.dark-mode .bubble.system {
+body.dark-mode .bubble.system,
+body.dark-mode .bubble.ai {
     background-color: #005c4b; /* WhatsApp Dark Green */
 }
 
 body.dark-mode .bubble.admin::after,
-body.dark-mode .bubble.system::after {
+body.dark-mode .bubble.system::after,
+body.dark-mode .bubble.ai::after {
     border-color: transparent transparent transparent #005c4b;
 }
 

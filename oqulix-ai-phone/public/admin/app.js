@@ -299,6 +299,8 @@ function hideBulkPanel() {
 async function sendBulkBroadcast() {
     const templateName = document.getElementById('bulk-template').value.trim();
     const language = document.getElementById('bulk-language').value.trim() || 'en';
+    const imageUrl = document.getElementById('bulk-image-url')?.value.trim();
+    const imageFile = document.getElementById('bulk-image-file')?.files[0];
     const numbersRaw = document.getElementById('bulk-numbers').value;
     
     if (!templateName) return alert("Please enter the template name.");
@@ -317,18 +319,31 @@ async function sendBulkBroadcast() {
     statusDiv.style.display = 'none';
     
     try {
+        const formData = new FormData();
+        formData.append('templateName', templateName);
+        formData.append('language', language);
+        formData.append('numbersRaw', JSON.stringify(numbers));
+        if (imageUrl) formData.append('imageUrl', imageUrl);
+        if (imageFile) formData.append('imageFile', imageFile);
+
         const res = await fetch('/api/admin/bulk-send', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ templateName, language, numbers })
+            body: formData
         });
         const data = await res.json();
         
         statusDiv.style.display = 'block';
-        if (data.success) {
-            statusDiv.innerHTML = `✅ Successfully sent to <b>${data.successCount}</b> numbers.<br>❌ Failed: <b>${data.failCount}</b>.`;
+        if (data.success && data.successCount > 0) {
+            statusDiv.innerHTML = `✅ Successfully sent to <b>${data.successCount}</b> numbers.`;
+            if (data.failCount > 0) {
+                statusDiv.innerHTML += `<br>❌ Failed: <b>${data.failCount}</b>. Reason: ${data.lastError}`;
+            }
             statusDiv.style.backgroundColor = '#d1fae5';
             statusDiv.style.color = '#065f46';
+        } else if (data.success && data.failCount > 0) {
+            statusDiv.innerHTML = `❌ Failed to send to <b>${data.failCount}</b> numbers.<br>Reason from Meta: <b>${data.lastError}</b>`;
+            statusDiv.style.backgroundColor = '#fee2e2';
+            statusDiv.style.color = '#991b1b';
         } else {
             statusDiv.innerHTML = `❌ Error: ${data.error}`;
             statusDiv.style.backgroundColor = '#fee2e2';

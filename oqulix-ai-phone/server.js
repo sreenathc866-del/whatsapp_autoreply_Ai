@@ -352,9 +352,19 @@ app.post('/api/admin/leads/:id/resume', async (req, res) => {
   }
 });
 
-app.post('/api/admin/bulk-send', async (req, res) => {
+const upload = multer({ storage: multer.memoryStorage() });
+const FormData = require('form-data');
+
+app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) => {
   try {
-    const { templateName, language, numbers } = req.body;
+    const { templateName, language, imageUrl, numbersRaw } = req.body;
+    let numbers;
+    try {
+      numbers = JSON.parse(numbersRaw);
+    } catch(e) {
+      numbers = numbersRaw.split(',').map(n => n.trim());
+    }
+
     if (!templateName || !numbers || !Array.isArray(numbers)) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -362,8 +372,33 @@ app.post('/api/admin/bulk-send', async (req, res) => {
     const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
     const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_ID;
     
+    let mediaId = null;
+
+    if (req.file) {
+      const form = new FormData();
+      form.append('file', req.file.buffer, {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+      });
+      form.append('messaging_product', 'whatsapp');
+      form.append('type', req.file.mimetype);
+
+      try {
+        const mediaRes = await axios.post(
+          `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/media`,
+          form,
+          { headers: { ...form.getHeaders(), Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
+        );
+        mediaId = mediaRes.data.id;
+      } catch (err) {
+        console.error('Failed to upload media to Meta:', err.response?.data || err.message);
+        return res.status(400).json({ error: 'Failed to upload image to Meta: ' + (err.response?.data?.error?.message || err.message) });
+      }
+    }
+
     let successCount = 0;
     let failCount = 0;
+    let lastError = "";
 
     for (const num of numbers) {
       try {
@@ -376,6 +411,22 @@ app.post('/api/admin/bulk-send', async (req, res) => {
             language: { code: language || 'en' }
           }
         };
+
+        if (mediaId) {
+          payload.template.components = [
+            {
+              type: "header",
+              parameters: [{ type: "image", image: { id: mediaId } }]
+            }
+          ];
+        } else if (imageUrl) {
+          payload.template.components = [
+            {
+              type: "header",
+              parameters: [{ type: "image", image: { link: imageUrl } }]
+            }
+          ];
+        }
         
         await axios.post(
           `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
@@ -384,12 +435,14 @@ app.post('/api/admin/bulk-send', async (req, res) => {
         );
         successCount++;
       } catch (err) {
-        console.error(`[Bulk Send] Failed for ${num}:`, err.response?.data || err.message);
+        const metaError = err.response?.data?.error?.message || err.message;
+        console.error(`[Bulk Send] Failed for ${num}:`, metaError);
+        lastError = metaError;
         failCount++;
       }
     }
 
-    res.json({ success: true, successCount, failCount });
+    res.json({ success: true, successCount, failCount, lastError });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

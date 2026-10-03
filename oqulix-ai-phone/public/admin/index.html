@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OQULIX - Lead Management Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=11">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -155,6 +155,14 @@
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Language Code</label>
                     <input type="text" id="bulk-language" value="en" placeholder="e.g. en or en_US" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Header Image (Optional)</label>
+                    <input type="text" id="bulk-image-url" placeholder="Paste image URL here..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem; margin-bottom: 0.5rem;">
+                    <div style="text-align: center; font-weight: bold; margin-bottom: 0.5rem; color: #6b7280;">OR</div>
+                    <input type="file" id="bulk-image-file" accept="image/jpeg, image/png" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; background: white;">
+                    <small style="color: #6b7280; display: block; margin-top: 0.5rem;">If your template requires a picture, paste the public link OR upload a local image (JPEG/PNG).</small>
                 </div>
 
                 <div style="margin-bottom: 1.5rem;">
