@@ -357,7 +357,7 @@ const FormData = require('form-data');
 
 app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) => {
   try {
-    const { templateName, language, imageUrl, numbersRaw } = req.body;
+    const { templateName, language, imageUrl, numbersRaw, variables } = req.body;
     let numbers;
     try {
       numbers = JSON.parse(numbersRaw);
@@ -426,6 +426,20 @@ app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) =>
               parameters: [{ type: "image", image: { link: imageUrl } }]
             }
           ];
+        }
+        
+        if (variables) {
+          if (!payload.template.components) {
+            payload.template.components = [];
+          }
+          const bodyParams = variables.split(',').map(v => ({
+            type: "text",
+            text: v.trim()
+          }));
+          payload.template.components.push({
+            type: "body",
+            parameters: bodyParams
+          });
         }
         
         await axios.post(

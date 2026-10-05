@@ -301,6 +301,7 @@ async function sendBulkBroadcast() {
     const language = document.getElementById('bulk-language').value.trim() || 'en';
     const imageUrl = document.getElementById('bulk-image-url')?.value.trim();
     const imageFile = document.getElementById('bulk-image-file')?.files[0];
+    const variables = document.getElementById('bulk-variables')?.value.trim();
     const numbersRaw = document.getElementById('bulk-numbers').value;
     
     if (!templateName) return alert("Please enter the template name.");
@@ -325,6 +326,7 @@ async function sendBulkBroadcast() {
         formData.append('numbersRaw', JSON.stringify(numbers));
         if (imageUrl) formData.append('imageUrl', imageUrl);
         if (imageFile) formData.append('imageFile', imageFile);
+        if (variables) formData.append('variables', variables);
 
         const res = await fetch('/api/admin/bulk-send', {
             method: 'POST',
