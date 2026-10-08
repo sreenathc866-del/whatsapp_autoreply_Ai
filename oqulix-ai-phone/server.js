@@ -359,7 +359,7 @@ const FormData = require('form-data');
 
 app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) => {
   try {
-    const { templateName, language, imageUrl, numbersRaw, variables } = req.body;
+    const { templateName, language, imageUrl, numbersRaw, variables, messageText } = req.body;
     let numbers;
     try {
       numbers = JSON.parse(numbersRaw);
@@ -469,12 +469,12 @@ app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) =>
           }
 
           if (leadId) {
-             let msgText = `[Broadcast] Template: ${templateName}`;
-             if (variables) msgText += ` | Variables: ${variables}`;
+             let msgText = messageText || `[Broadcast] Template: ${templateName}`;
+             if (!messageText && variables) msgText += ` | Variables: ${variables}`;
              
              await supabase.from('conversations').insert([{
                  lead_id: leadId,
-                 sender: 'admin',
+                 sender: 'ai', // 'ai' instead of 'admin' so it doesn't pause the AI logic
                  message: msgText,
                  wamid: wamid
              }]);
