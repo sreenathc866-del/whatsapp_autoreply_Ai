@@ -164,6 +164,8 @@ app.get('/api/whatsapp/webhook', (req, res) => {
 app.post('/api/whatsapp/webhook', async (req, res) => {
   try {
     const body = req.body;
+    console.log("=== INCOMING WEBHOOK ===");
+    console.log(JSON.stringify(body, null, 2));
 
     // Check if it's a WhatsApp API event
     if (body.object) {
@@ -442,12 +444,45 @@ app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) =>
           });
         }
         
-        await axios.post(
+        const response = await axios.post(
           `https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages`,
           payload,
           { headers: { 'Authorization': `Bearer ${WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' } }
         );
         successCount++;
+
+        // --- NEW: Automatically create lead and conversation on bulk send ---
+        try {
+          const wamid = response.data?.messages?.[0]?.id;
+          let { data: existingLead } = await supabase.from('leads').select('*').eq('phone_number', num).single();
+          
+          let leadId;
+          if (!existingLead) {
+             const { data: newLead } = await supabase.from('leads').insert([{
+                 phone_number: num,
+                 customer_name: 'Broadcast Recipient',
+                 lead_status: 'BROADCAST'
+             }]).select().single();
+             if (newLead) leadId = newLead.id;
+          } else {
+             leadId = existingLead.id;
+          }
+
+          if (leadId) {
+             let msgText = `[Broadcast] Template: ${templateName}`;
+             if (variables) msgText += ` | Variables: ${variables}`;
+             
+             await supabase.from('conversations').insert([{
+                 lead_id: leadId,
+                 sender: 'admin',
+                 message: msgText,
+                 wamid: wamid
+             }]);
+          }
+        } catch (dbErr) {
+          console.error("Failed to save broadcast to DB:", dbErr);
+        }
+        // -------------------------------------------------------------------
       } catch (err) {
         const metaError = err.response?.data?.error?.message || err.message;
         console.error(`[Bulk Send] Failed for ${num}:`, metaError);

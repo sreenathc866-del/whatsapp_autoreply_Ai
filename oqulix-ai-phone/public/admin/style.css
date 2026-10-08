@@ -118,7 +118,7 @@ body {
 .status-badge.WARM { background: #fef3c7; color: #b45309; }
 .status-badge.COLD { background: #e0e7ff; color: #4338ca; }
 .status-badge.UNQUALIFIED { background: #f3f4f6; color: #4b5563; }
-
+.status-badge.BROADCAST { background: #dbeafe; color: #1e3a8a; }
 .lead-meta {
     font-size: 0.875rem;
     color: #6b7280;

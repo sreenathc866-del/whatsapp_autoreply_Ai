@@ -22,44 +22,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let currentLeadId = null;
 let isAiPaused = false;
+let currentFilter = 'INBOX'; // 'INBOX' or 'BROADCASTS'
+let allLeadsCache = [];
+
+function setFilter(filterType) {
+    currentFilter = filterType;
+    const inboxBtn = document.getElementById('filter-inbox-btn');
+    const broadcastBtn = document.getElementById('filter-broadcasts-btn');
+    
+    // Active style: solid blue background with white text
+    const activeBg = '#3b82f6';
+    const activeColor = '#ffffff';
+    const activeBorder = '1px solid #3b82f6';
+
+    // Inactive style: transparent background with secondary text color
+    const inactiveBg = 'transparent';
+    const inactiveColor = 'var(--text-secondary)';
+    const inactiveBorder = '1px solid var(--border-color)';
+    
+    if (filterType === 'INBOX') {
+        inboxBtn.style.backgroundColor = activeBg;
+        inboxBtn.style.color = activeColor;
+        inboxBtn.style.borderColor = '#3b82f6';
+        
+        broadcastBtn.style.backgroundColor = inactiveBg;
+        broadcastBtn.style.color = inactiveColor;
+        broadcastBtn.style.borderColor = 'var(--border-color)';
+    } else {
+        broadcastBtn.style.backgroundColor = activeBg;
+        broadcastBtn.style.color = activeColor;
+        broadcastBtn.style.borderColor = '#3b82f6';
+        
+        inboxBtn.style.backgroundColor = inactiveBg;
+        inboxBtn.style.color = inactiveColor;
+        inboxBtn.style.borderColor = 'var(--border-color)';
+    }
+    renderLeads();
+}
 
 async function fetchLeads() {
     try {
         const response = await fetch('/api/admin/leads');
-        const leads = await response.json();
-        
-        const listEl = document.getElementById('leads-list');
-        listEl.innerHTML = '';
-        
-        let hotCount = 0;
-        
-        leads.forEach(lead => {
-            if (lead.lead_status === 'HOT') hotCount++;
-            
-            const card = document.createElement('div');
-            card.className = 'lead-card';
-            card.onclick = () => loadLeadDetail(lead);
-            
-            const timeStr = new Date(lead.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            card.innerHTML = `
-                <div class="lead-header">
-                    <span class="lead-name">${lead.customer_name || 'Unknown User'}</span>
-                    <span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>
-                </div>
-                <div class="lead-meta">
-                    ${lead.phone_number} • ${timeStr}
-                </div>
-            `;
-            listEl.appendChild(card);
-        });
-
-        document.getElementById('total-count').innerText = leads.length;
-        document.getElementById('hot-count').innerText = hotCount;
-
+        allLeadsCache = await response.json();
+        renderLeads();
     } catch (error) {
         console.error('Error fetching leads:', error);
         document.getElementById('leads-list').innerHTML = '<div class="loading">Error loading leads.</div>';
+    }
+}
+
+function renderLeads() {
+    const listEl = document.getElementById('leads-list');
+    listEl.innerHTML = '';
+    
+    let hotCount = 0;
+    let broadcastCount = 0;
+    
+    allLeadsCache.forEach(lead => {
+        if (lead.lead_status === 'HOT') hotCount++;
+        if (lead.lead_status === 'BROADCAST') broadcastCount++;
+    });
+    
+    let leadsToRender = allLeadsCache;
+    if (currentFilter === 'BROADCASTS') {
+        leadsToRender = allLeadsCache.filter(l => l.lead_status === 'BROADCAST');
+    } else {
+        // INBOX mode: Show everything EXCEPT 'BROADCAST' status
+        leadsToRender = allLeadsCache.filter(l => l.lead_status !== 'BROADCAST');
+    }
+    
+    leadsToRender.forEach(lead => {
+        const card = document.createElement('div');
+        card.className = 'lead-card';
+        card.onclick = () => loadLeadDetail(lead);
+        
+        const timeStr = new Date(lead.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        card.innerHTML = `
+            <div class="lead-header">
+                <span class="lead-name">${lead.customer_name || 'Unknown User'}</span>
+                <span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>
+            </div>
+            <div class="lead-meta">
+                ${lead.phone_number} • ${timeStr}
+            </div>
+        `;
+        listEl.appendChild(card);
+    });
+
+    document.getElementById('total-count').innerText = allLeadsCache.length;
+    document.getElementById('hot-count').innerText = hotCount;
+    
+    const badge = document.getElementById('unread-broadcasts-badge');
+    if (broadcastCount > 0) {
+        badge.style.display = 'block';
+        badge.innerText = broadcastCount;
+    } else {
+        badge.style.display = 'none';
     }
 }
 

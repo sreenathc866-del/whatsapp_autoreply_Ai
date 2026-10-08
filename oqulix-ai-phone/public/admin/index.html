@@ -11,6 +11,7 @@
     <header class="navbar">
         <div class="logo">OQULIX<span>AI</span> Leads</div>
         <div class="stats" style="display: flex; align-items: center; gap: 10px;">
+            <button onclick="showBulkPanel()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;">📣 Bulk Send</button>
             <button id="theme-toggle-btn" onclick="toggleDarkMode()" style="background: transparent; border: none; color: #a1a1aa; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; transition: color 0.2s;" title="Toggle Dark Mode">
                 <svg xmlns="http://www.w3.org/2000/svg" id="theme-icon" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 22px; height: 22px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
@@ -27,8 +28,12 @@
             <div class="panel-header">
                 <h2>Recent Leads</h2>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="showBulkPanel()" class="refresh-btn" style="color: #10b981; font-weight: bold;">📣 Bulk Send</button>
-                    <button onclick="fetchLeads()" class="refresh-btn">🔄 Refresh</button>
+                    <button id="filter-inbox-btn" onclick="setFilter('INBOX')" class="refresh-btn" style="background-color: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px;">📥 Inbox</button>
+                    <button id="filter-broadcasts-btn" onclick="setFilter('BROADCASTS')" class="refresh-btn" style="position: relative; background-color: transparent; color: var(--text-secondary); border: 1px solid transparent; border-radius: 4px; padding: 4px 8px;">
+                        📢 Broadcasts
+                        <span id="unread-broadcasts-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 10px; font-weight: bold;">0</span>
+                    </button>
+                    <button onclick="fetchLeads()" class="refresh-btn">🔄</button>
                 </div>
             </div>
             <div class="leads-list" id="leads-list">
@@ -139,11 +144,11 @@
         </section>
         
         <!-- Bulk Send Panel -->
-        <section class="detail-panel" id="bulk-panel" style="display: none; padding: 2rem; background: #f9fafb; align-items: flex-start; justify-content: center; overflow-y: auto; height: 100vh;">
-            <div style="width: 100%; max-width: 600px; background: white; padding: 2rem; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 2rem; margin-bottom: 2rem;">
+        <section class="detail-panel" id="bulk-panel" style="display: none; padding: 2rem; background: var(--bg-primary); align-items: center; justify-content: flex-start; overflow-y: auto; height: 100%;">
+            <div class="bulk-inner" style="width: 100%; max-width: 600px; background: var(--bg-surface); color: var(--text-primary); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 2rem; margin-bottom: 2rem;">
                 <h2 style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
                     📣 Bulk Broadcast
-                    <button onclick="hideBulkPanel()" style="background: none; border: none; cursor: pointer; color: #6b7280; font-size: 1.2rem;">✖</button>
+                    <button onclick="hideBulkPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.2rem;">✖</button>
                 </h2>
                 
                 <div style="margin-bottom: 1rem;">
