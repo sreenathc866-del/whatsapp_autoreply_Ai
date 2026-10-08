@@ -461,11 +461,14 @@ app.post('/api/admin/bulk-send', upload.single('imageFile'), async (req, res) =>
              const { data: newLead } = await supabase.from('leads').insert([{
                  phone_number: num,
                  customer_name: 'Broadcast Recipient',
-                 lead_status: 'BROADCAST'
+                 lead_status: 'BROADCAST',
+                 has_received_broadcast: true
              }]).select().single();
              if (newLead) leadId = newLead.id;
           } else {
              leadId = existingLead.id;
+             // Update existing lead to mark them as a broadcast recipient
+             await supabase.from('leads').update({ has_received_broadcast: true }).eq('id', leadId);
           }
 
           if (leadId) {

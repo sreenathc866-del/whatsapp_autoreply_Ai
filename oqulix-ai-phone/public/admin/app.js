@@ -85,7 +85,7 @@ function renderLeads() {
     
     let leadsToRender = allLeadsCache;
     if (currentFilter === 'BROADCASTS') {
-        leadsToRender = allLeadsCache.filter(l => l.lead_status === 'BROADCAST');
+        leadsToRender = allLeadsCache.filter(l => l.has_received_broadcast === true || l.lead_status === 'BROADCAST');
     } else {
         // INBOX mode: Show everything EXCEPT 'BROADCAST' status
         leadsToRender = allLeadsCache.filter(l => l.lead_status !== 'BROADCAST');
