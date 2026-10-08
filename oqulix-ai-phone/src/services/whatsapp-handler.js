@@ -263,6 +263,12 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
         console.error('[WhatsApp] Failed to save customer message:', insertErr);
       }
 
+      // If they were a broadcast recipient and they replied, move them to the Inbox
+      if (lead.lead_status === 'BROADCAST') {
+        await supabase.from('leads').update({ lead_status: 'UNQUALIFIED' }).eq('id', lead.id);
+        lead.lead_status = 'UNQUALIFIED'; // Update local object
+      }
+
       // Fetch history (get latest 10 messages)
       const { data: history } = await supabase
         .from('conversations')
