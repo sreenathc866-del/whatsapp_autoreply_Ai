@@ -197,6 +197,16 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
   
   if (msgObject.type === 'text') {
     incomingMessage = msgObject.text.body;
+  } else if (msgObject.type === 'button') {
+    incomingMessage = msgObject.button.text;
+  } else if (msgObject.type === 'interactive') {
+    if (msgObject.interactive.type === 'button_reply') {
+        incomingMessage = msgObject.interactive.button_reply.title;
+    } else if (msgObject.interactive.type === 'list_reply') {
+        incomingMessage = msgObject.interactive.list_reply.title;
+    } else {
+        incomingMessage = "[Interactive Message]";
+    }
   } else if (msgObject.type === 'audio') {
     console.log(`[WhatsApp] Downloading audio message...`);
     const media = await downloadWhatsAppMedia(msgObject.audio.id);

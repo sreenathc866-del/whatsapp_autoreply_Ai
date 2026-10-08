@@ -180,7 +180,7 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
         let customerName = body.entry[0].changes[0].value.contacts[0].profile.name;
         let msg = body.entry[0].changes[0].value.messages[0];
         
-        if (msg.type === "text" || msg.type === "audio") {
+        if (msg.type === "text" || msg.type === "audio" || msg.type === "button" || msg.type === "interactive") {
           let messageId = msg.id;
           
           if (processedMessages.has(messageId)) {
